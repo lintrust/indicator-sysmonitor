@@ -33,9 +33,11 @@ cpu_load = []
 
 def bytes_to_human(num):
     for unit in B_UNITS:
-        if abs(num) < 1000.0:
-            return "%3.2f %s" % (num, unit)
-        num /= 1000.0
+        if abs(num) < 1024.0:
+            if unit == 'B':
+                return "%3.1f %s" % (num/1024, 'KB')
+            return "%3.1f %s" % (num, unit)
+        num /= 1024.0
     return "%.2f %s" % (num, 'YB')
 
 class ISMError(Exception):
@@ -55,9 +57,9 @@ class SensorManager(object):
     class __impl:
 
         settings = {
-            'custom_text': 'cpu: {cpu} mem: {mem}',
+            'custom_text': '{net} | u {cpu}| m {mem}| d {fs///}',
             'interval': 2,
-            'on_startup': False,
+            'on_startup': True,
             'sensors': {
                 # 'name' => (desc, cmd)
             }
@@ -484,7 +486,7 @@ class NetSensor(BaseSensor):
     name = 'net'
     desc = _('Network activity.')
     _last_net_usage = [0, 0]  # (up, down)
-
+    _last_net_strlen=[0, 0] # (up, down)
     def get_value(self, sensor_data):
         return self._fetch_net()
 
@@ -502,7 +504,10 @@ class NetSensor(BaseSensor):
         mgr = SensorManager()
         current[0] /= mgr.get_interval()
         current[1] /= mgr.get_interval()
-        return '↓ {:>9s}/s ↑ {:>9s}/s'.format(bytes_to_human(current[0]), bytes_to_human(current[1]))
+        # print("up %s".format(current[0]))
+        
+
+        return (("↓%s/s " % bytes_to_human(current[0]).rjust(7,'0') + "↑%s/s" % bytes_to_human(current[1]).rjust(7,'0')))
 
 class NetCompSensor(BaseSensor):
     name = 'netcomp'
